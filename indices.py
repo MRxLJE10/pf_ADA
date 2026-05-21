@@ -226,3 +226,125 @@ class _HashMapLista:
         if lista is None:
             return
         yield from lista.iterar()
+
+        
+# -----------------------------------------------------------------------------
+# Modulo principal de indices auxiliares
+# -----------------------------------------------------------------------------
+ 
+class IndicesAuxiliares:
+    """
+    Mantiene dos indices auxiliares sobre la MatrizDispersa:
+        _idx_fila : fila    -> { col  : valor }
+        _idx_col  : columna -> { fila : valor }
+ 
+    Ambos se construyen en O(N) al inicializar y se mantienen
+    sincronizados con cada set/delete en O(1) promedio.
+ 
+    Responsabilidades:
+        - ROW_SUM fila       -> O(k_f) donde k_f = elementos en esa fila
+        - COL_SUM columna    -> O(k_c) donde k_c = elementos en esa columna
+        - DENSITY            -> O(1)
+    """
+ 
+    def __init__(self, matriz):
+        """
+        Construye los indices recorriendo todos los elementos actuales
+        de la matriz con matriz.iterar().
+        Complejidad: O(N)
+        """
+        self._idx_fila = _HashMapLista()
+        self._idx_col  = _HashMapLista()
+        self._matriz   = matriz
+ 
+        for fila, col, valor in matriz.iterar():
+            self._idx_fila.insertar(fila, col, valor)
+            self._idx_col.insertar(col, fila, valor)
+ 
+    # ------------------------------------------------------------------
+    # Sincronizacion: deben llamarse cada vez que la matriz cambie
+    # ------------------------------------------------------------------
+ 
+    def on_set(self, fila, col, valor_nuevo, valor_anterior):
+        """
+        Actualiza los indices cuando se hace SET (fila, col, valor_nuevo).
+ 
+        valor_anterior: valor que habia antes (0 si no existia).
+        Se llama DESPUES de que la matriz ya actualizo su valor.
+        """
+        self._idx_fila.insertar(fila, col, valor_nuevo)
+        self._idx_col.insertar(col, fila, valor_nuevo)
+ 
+    def on_delete(self, fila, col):
+        """
+        Actualiza los indices cuando se hace DELETE (fila, col).
+        Se llama DESPUES de que la matriz ya elimino el valor.
+        """
+        self._idx_fila.eliminar(fila, col)
+        self._idx_col.eliminar(col, fila)
+ 
+    # ------------------------------------------------------------------
+    # Operaciones publicas
+    # ------------------------------------------------------------------
+ 
+    def row_sum(self, fila):
+        """
+        Suma de todos los valores en la fila dada.
+        Complejidad: O(k_f)
+        """
+        return self._idx_fila.suma_por_clave(fila)
+ 
+    def col_sum(self, col):
+        """
+        Suma de todos los valores en la columna dada.
+        Complejidad: O(k_c)
+        """
+        return self._idx_col.suma_por_clave(col)
+ 
+    def density(self):
+        """
+        Proporcion de celdas no nulas sobre el total de celdas posibles.
+        density = N_activos / (F * C)
+ 
+        Complejidad: O(1)
+ 
+        Nota: F*C puede ser hasta 10^18, por eso se usa division flotante
+        y se formatea con suficientes decimales para no perder precision.
+        """
+        total_celdas = self._matriz.filas * self._matriz.cols
+        if total_celdas == 0:
+            return 0.0
+        return self._matriz.cantidad() / total_celdas
+ 
+    def iterar_fila(self, fila):
+        """Generador: produce (col, valor) para todos los elementos de una fila."""
+        yield from self._idx_fila.iterar_clave(fila)
+ 
+    def iterar_col(self, col):
+        """Generador: produce (fila, valor) para todos los elementos de una columna."""
+        yield from self._idx_col.iterar_clave(col)
+ 
+    def ejecutar(self, nombre, params, matriz):
+        """
+        Punto de entrada para ejecutar_operaciones() del hash_table.py.
+        Recibe el nombre de la operacion y sus parametros como lista de strings.
+        """
+        if nombre == "ROW_SUM":
+            fila = int(params[0])
+            resultado = self.row_sum(fila)
+            return f"ROW_SUM {fila} = {resultado}"
+ 
+        elif nombre == "COL_SUM":
+            col = int(params[0])
+            resultado = self.col_sum(col)
+            return f"COL_SUM {col} = {resultado}"
+ 
+        elif nombre == "DENSITY":
+            d = self.density()
+            # Mostrar en notacion cientifica si es muy pequenio
+            if d == 0.0:
+                return "DENSITY = 0.0"
+            return f"DENSITY = {d:.10e}"
+ 
+        else:
+            return f"{nombre} = NO_IMPLEMENTADO_EN_INDICES"
