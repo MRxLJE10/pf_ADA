@@ -1,9 +1,10 @@
 # =============================================================================
-# Punto de entrada del proyecto — integra MatrizDispersa + IndicesAuxiliares
+# Punto de entrada del proyecto — integra MatrizDispersa + IndicesAuxiliares + OperacionesAvanzadas
 # =============================================================================
 
 from hash_table import MatrizDispersa
 from indices import IndicesAuxiliares
+from ops_avanzadas import OperacionesAvanzadas
 
 
 # -----------------------------------------------------------------------------
@@ -19,6 +20,7 @@ class MatrizConIndices:
     def __init__(self, filas, cols):
         self.matriz  = MatrizDispersa(filas, cols)
         self.indices = None  # se inicializa despues de cargar los datos
+        self.ops_avanzadas = None
 
     def inicializar_indices(self):
         """
@@ -26,6 +28,7 @@ class MatrizConIndices:
         Llamar una sola vez despues de cargar todos los valores iniciales.
         """
         self.indices = IndicesAuxiliares(self.matriz)
+        self.ops_avanzadas = OperacionesAvanzadas(self)
 
     def set(self, fila, col, valor):
         valor_anterior = self.matriz.get(fila, col)
@@ -127,9 +130,12 @@ def ejecutar_operaciones(mc, ops):
             else:
                 resultados.append(f"DENSITY = {d:.10e}")
 
+        elif nombre in ("REGION_SUM", "TOP_K", "TRANSPOSE"):
+            resultado = mc.ops_avanzadas.ejecutar(nombre, partes[1:])
+            resultados.append(resultado)
+
         else:
-            # PENDIENTE: TOP_K, REGION_SUM, TRANSPOSE — otras personas
-            resultados.append(f"{nombre} = PENDIENTE")
+            resultados.append(f"{nombre} = OPERACION_DESCONOCIDA")
 
     return resultados
 
