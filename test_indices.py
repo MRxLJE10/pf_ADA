@@ -349,7 +349,7 @@ def test_ejemplo_enunciado():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     print("=" * 55)
-    print("  Tests IndicesAuxiliares — Persona 2")
+    print("  Tests IndicesAuxiliares")
     print("=" * 55)
 
     test_row_sum_basico()

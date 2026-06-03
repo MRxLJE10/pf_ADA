@@ -18,7 +18,7 @@ class _NodoEntrada:
     Nodo de lista enlazada.
     Almacena una entrada (clave_secundaria, valor) dentro de un bucket.
 
-    clave_secundaria: en el indice de filas es la columna; en el de columnas es la fila.
+    clave_secundaria: en el indice de filas es la columna, en el de columnas es la fila.
     """
     def __init__(self, clave_sec, valor):
         self.clave_sec = clave_sec
